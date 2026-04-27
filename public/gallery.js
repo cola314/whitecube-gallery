@@ -127,13 +127,13 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.25;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeef0, 0.55));
-const ceilingLight = new THREE.DirectionalLight(0xffffff, 0.6);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeef0, 0.85));
+const ceilingLight = new THREE.DirectionalLight(0xffffff, 0.7);
 ceilingLight.position.set(0, room.dim.h * 2, 0);
 scene.add(ceilingLight);
 
@@ -177,37 +177,37 @@ function addWall(w, h, x, y, z, ry, mat) {
   m.receiveShadow = true;
   scene.add(m);
 }
-// Inner solid walls. Back wall has a small transparent door cut into it.
+// Inner solid walls. Front wall (behind spawn) has a small transparent door.
 const DOOR_W = 1.5, DOOR_H = 2.2;
 
-// Front, left, right: full solid walls
-addWall(HALL.w, HALL.h, 0,         HALL.h/2,  HALL.d/2, Math.PI);
+// Back, left, right: full solid walls
+addWall(HALL.w, HALL.h, 0,         HALL.h/2, -HALL.d/2, 0);
 addWall(HALL.d, HALL.h, -HALL.w/2, HALL.h/2, 0,         Math.PI/2);
 addWall(HALL.d, HALL.h,  HALL.w/2, HALL.h/2, 0,        -Math.PI/2);
 
-// Back wall split into 3 segments around the door cutout (top + left + right)
+// Front wall (z = +HALL.d/2) split into 3 segments around the door cutout
 const _sideW = HALL.w/2 - DOOR_W/2;
 const _sideCenterX = (HALL.w/2 + DOOR_W/2) / 2;
-addWall(HALL.w,  HALL.h - DOOR_H,  0,             (HALL.h + DOOR_H)/2, -HALL.d/2, 0);
-addWall(_sideW,  DOOR_H,           -_sideCenterX, DOOR_H/2,            -HALL.d/2, 0);
-addWall(_sideW,  DOOR_H,            _sideCenterX, DOOR_H/2,            -HALL.d/2, 0);
+addWall(HALL.w,  HALL.h - DOOR_H,  0,             (HALL.h + DOOR_H)/2,  HALL.d/2, Math.PI);
+addWall(_sideW,  DOOR_H,           -_sideCenterX, DOOR_H/2,             HALL.d/2, Math.PI);
+addWall(_sideW,  DOOR_H,            _sideCenterX, DOOR_H/2,             HALL.d/2, Math.PI);
 
 // Transparent glass door
 const door = new THREE.Mesh(new THREE.PlaneGeometry(DOOR_W, DOOR_H), doorMat);
-door.position.set(0, DOOR_H/2, -HALL.d/2);
+door.position.set(0, DOOR_H/2, HALL.d/2);
 scene.add(door);
 
 // Door frame trim (dark)
 const doorFrameMat = new THREE.MeshStandardMaterial({ color: 0x1d1d1f, roughness: 0.6, metalness: 0.2 });
 const _t = 0.06;
 const _tr_top = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W + _t*2, _t, 0.04), doorFrameMat);
-_tr_top.position.set(0, DOOR_H + _t/2, -HALL.d/2);
+_tr_top.position.set(0, DOOR_H + _t/2, HALL.d/2);
 scene.add(_tr_top);
 const _tr_l = new THREE.Mesh(new THREE.BoxGeometry(_t, DOOR_H, 0.04), doorFrameMat);
-_tr_l.position.set(-(DOOR_W/2 + _t/2), DOOR_H/2, -HALL.d/2);
+_tr_l.position.set(-(DOOR_W/2 + _t/2), DOOR_H/2, HALL.d/2);
 scene.add(_tr_l);
 const _tr_r = new THREE.Mesh(new THREE.BoxGeometry(_t, DOOR_H, 0.04), doorFrameMat);
-_tr_r.position.set(DOOR_W/2 + _t/2, DOOR_H/2, -HALL.d/2);
+_tr_r.position.set(DOOR_W/2 + _t/2, DOOR_H/2, HALL.d/2);
 scene.add(_tr_r);
 
 // Outer solid walls (~12m outside inner walls)
@@ -277,7 +277,7 @@ async function placeArtwork(art) {
 
   const canvasMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(w, h),
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 })
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.35 })
   );
   canvasMesh.position.z = 0.044;
   canvasMesh.userData.art = art;
@@ -366,7 +366,7 @@ document.getElementById('counter').textContent = `— / ${totalCount}`;
 
     const canvas = new THREE.Mesh(
       new THREE.PlaneGeometry(w, h),
-      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 })
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.35 })
     );
     canvas.position.z = 0.038;
     group.add(canvas);
