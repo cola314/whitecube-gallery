@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whitecube-gallery
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - gallery.cola.io.kr
+      secretName: whitecube-gallery-tls
+  rules:
+    - host: gallery.cola.io.kr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: whitecube-gallery
+                port:
+                  number: 80

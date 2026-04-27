@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>White Cube · 관리자</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; background: #f5f5f7; color: #1d1d1f; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  a { color: #0066cc; text-decoration: none; }
+  a:hover { color: #0077ed; text-decoration: underline; }
+
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(29,29,31,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    color: #f5f5f7; height: 56px; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .topnav .brand { font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px; }
+  .topnav nav { display: flex; gap: 18px; font-size: 13px; }
+  .topnav nav a { color: rgba(255,255,255,0.86); }
+  .topnav nav a:hover { color: #fff; text-decoration: none; }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 6px; }
+  .sub { color: #6e6e73; margin: 0 0 32px; font-size: 15px; }
+
+  .card { background: #fff; border-radius: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .card .h-sub { color: #6e6e73; font-size: 13px; margin-bottom: 18px; }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; color: #6e6e73; letter-spacing: 0.04em; }
+  input[type="text"], input[type="number"], select, textarea {
+    font-family: inherit; font-size: 14px; color: #1d1d1f;
+    border: 1px solid #d2d2d7; border-radius: 8px; padding: 10px 12px;
+    background: #fff; outline: none; transition: border-color 140ms ease;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0,113,227,0.15); }
+  textarea { min-height: 72px; resize: vertical; }
+
+  button { font-family: inherit; cursor: pointer; transition: background 160ms ease, transform 100ms ease; }
+  button:active { transform: scale(0.98); }
+  .btn-primary { background: #0071e3; color: #fff; border: none; padding: 10px 20px; border-radius: 980px; font-size: 14px; }
+  .btn-primary:hover { background: #0077ed; }
+  .btn-dark { background: #1d1d1f; color: #fff; border: none; padding: 10px 20px; border-radius: 980px; font-size: 14px; }
+  .btn-dark:hover { background: #000; }
+  .btn-ghost { background: transparent; color: #1d1d1f; border: 1px solid #d2d2d7; padding: 9px 18px; border-radius: 980px; font-size: 14px; }
+  .btn-ghost:hover { background: #f5f5f7; }
+  .btn-danger { background: transparent; color: #d23030; border: 1px solid #e9bfbf; padding: 9px 18px; border-radius: 980px; font-size: 14px; }
+  .btn-danger:hover { background: #fdf2f2; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .gallery-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .gallery-bar select { min-width: 240px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid #ececef; vertical-align: middle; }
+  th { color: #6e6e73; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  td.thumb-cell { width: 76px; }
+  .thumb-img { width: 60px; height: 60px; border-radius: 8px; background: #f5f5f7; background-size: cover; background-position: center; border: 1px solid #ececef; }
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .empty { text-align: center; color: #6e6e73; padding: 48px 16px; font-size: 14px; }
+
+  .grid-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .grid-form .full { grid-column: 1 / -1; }
+  @media (max-width: 600px) { .grid-form { grid-template-columns: 1fr; } }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1d1d1f; color: #fff; padding: 12px 20px; border-radius: 980px; font-size: 13px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+    opacity: 0; pointer-events: none; transition: opacity 200ms ease, transform 200ms ease;
+    z-index: 200;
+  }
+  .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.42); z-index: 100;
+    display: none; align-items: flex-start; justify-content: center; padding: 60px 20px; overflow-y: auto;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 18px; padding: 28px; width: 100%; max-width: 640px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+  }
+  .modal h2 { margin: 0 0 4px; font-size: 24px; font-weight: 600; }
+  .modal .h-sub { margin-bottom: 18px; color: #6e6e73; font-size: 13px; }
+  .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 980px; font-size: 11px; background: #f5f5f7; color: #6e6e73; }
+  .pill.assigned { background: #e8f3ff; color: #0066cc; }
+  .pill.empty { background: #fdf2e8; color: #b8651a; }
+
+  .minimap-wrap { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  .minimap-svg-wrap {
+    flex: 1 1 480px; max-width: 720px;
+    background: #fafafa; border: 1px solid #ececef; border-radius: 12px; padding: 18px;
+  }
+  .minimap-svg { width: 100%; height: auto; display: block; }
+  .minimap-legend { flex: 1 1 220px; min-width: 200px; font-size: 13px; color: #424245; }
+  .minimap-legend ul { padding-left: 0; list-style: none; margin: 0; }
+  .minimap-legend li { padding: 8px 0; border-bottom: 1px solid #ececef; display: flex; align-items: center; gap: 10px; }
+  .minimap-legend li:last-child { border-bottom: none; }
+  .legend-swatch { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+  .legend-swatch.assigned { background: #0071e3; }
+  .legend-swatch.empty { background: transparent; border: 1.5px dashed #86868b; }
+  .legend-swatch.spawn { background: #ffd60a; border-radius: 50%; width: 14px; height: 14px; }
+  .minimap-tooltip {
+    position: fixed; background: #1d1d1f; color: #fff; padding: 8px 12px; border-radius: 8px;
+    font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 120ms ease;
+    z-index: 60; max-width: 220px; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  }
+  .minimap-tooltip.visible { opacity: 1; }
+  .minimap-tooltip .t-title { font-weight: 600; margin-bottom: 2px; }
+  .minimap-tooltip .t-sub { color: rgba(255,255,255,0.7); font-size: 11px; }
+
+  .minimap-svg .slot-group { cursor: pointer; }
+  .minimap-svg .slot-group:hover .slot-bar.empty { stroke: #0071e3; stroke-dasharray: none; fill: #e8f3ff; }
+  .minimap-svg .slot-group:hover .slot-card { stroke-width: 0.1; filter: brightness(1.04); }
+  .minimap-svg .slot-hit { fill: transparent; }
+
+  .file-drop {
+    border: 1.5px dashed #d2d2d7; border-radius: 12px; padding: 24px; text-align: center;
+    color: #6e6e73; font-size: 13px; transition: background 160ms ease, border-color 160ms ease;
+    cursor: pointer;
+  }
+  .file-drop:hover, .file-drop.dragging { background: #f5f5f7; border-color: #0071e3; color: #1d1d1f; }
+  .file-drop input { display: none; }
+  .preview { width: 100%; max-height: 240px; object-fit: contain; border-radius: 8px; margin-top: 12px; background: #f5f5f7; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand">White Cube · Admin</div>
+  <nav>
+    <a href="index.html">전시 보기 →</a>
+  </nav>
+</div>
+
+<div class="container">
+  <h1>전시 관리</h1>
+  <p class="sub">갤러리 · 전시장 · 작품을 동적으로 관리합니다. 모든 데이터는 이 브라우저에 저장됩니다.</p>
+
+  <section class="card">
+    <h2>갤러리</h2>
+    <p class="h-sub">활성 갤러리를 고르거나 새로 만드세요.</p>
+    <div class="gallery-bar">
+      <div class="field">
+        <label>활성 갤러리</label>
+        <select id="gallery-select"></select>
+      </div>
+      <div class="field">
+        <label>이름</label>
+        <input type="text" id="gallery-name" placeholder="갤러리 이름">
+      </div>
+      <div class="field">
+        <label>전시장</label>
+        <select id="room-select"></select>
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn-ghost" id="new-gallery">+ 새 갤러리</button>
+      <button class="btn-danger" id="delete-gallery">삭제</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>전시장 평면도</h2>
+    <p class="h-sub" id="minimap-info">슬롯을 클릭해 작품을 추가하거나 편집하세요.</p>
+    <div class="minimap-wrap">
+      <div class="minimap-svg-wrap">
+        <svg class="minimap-svg" id="minimap" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="minimap-legend">
+        <ul>
+          <li><span class="legend-swatch assigned"></span><span>배치된 작품 (클릭 → 편집)</span></li>
+          <li><span class="legend-swatch empty"></span><span>빈 슬롯 (클릭 → 추가)</span></li>
+          <li><span class="legend-swatch spawn"></span><span>입장 위치</span></li>
+        </ul>
+        <p style="margin-top: 16px; font-size: 12px; color: #6e6e73; line-height: 1.5;">
+          위에서 내려다본 평면도입니다. 막대 방향이 작품이 걸리는 벽면을 나타냅니다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row" style="justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
+      <div>
+        <h2>작품 목록</h2>
+        <p class="h-sub" id="artwork-count">— 점</p>
+      </div>
+      <div class="row">
+        <button class="btn-ghost btn-sm" id="export-btn">백업 내보내기</button>
+        <button class="btn-ghost btn-sm" id="import-btn">불러오기</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none;">
+        <button class="btn-dark" id="add-artwork">+ 작품 추가</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>No.</th>
+          <th>제목</th>
+          <th>작가</th>
+          <th>슬롯</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="artwork-rows"></tbody>
+    </table>
+    <div class="empty" id="empty-state" style="display:none;">아직 등록된 작품이 없습니다.</div>
+  </section>
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">작품 추가</h2>
+    <p class="h-sub">제목, 작가, 이미지를 입력하세요. 이미지가 없으면 절차적 샘플로 표시됩니다.</p>
+    <div class="grid-form">
+      <div class="field">
+        <label>No. (번호)</label>
+        <input type="text" id="f-no" placeholder="01">
+      </div>
+      <div class="field">
+        <label>슬롯</label>
+        <select id="f-slot"></select>
+      </div>
+      <div class="field full">
+        <label>제목</label>
+        <input type="text" id="f-title" placeholder="Quiet Geometry">
+      </div>
+      <div class="field">
+        <label>작가</label>
+        <input type="text" id="f-artist" placeholder="작가명">
+      </div>
+      <div class="field">
+        <label>연도</label>
+        <input type="number" id="f-year" placeholder="2025">
+      </div>
+      <div class="field">
+        <label>매체 (Medium)</label>
+        <input type="text" id="f-medium" placeholder="Oil on canvas">
+      </div>
+      <div class="field">
+        <label>크기 (Dimensions)</label>
+        <input type="text" id="f-dim" placeholder="120 × 90 cm">
+      </div>
+      <div class="field full">
+        <label>설명</label>
+        <textarea id="f-desc" placeholder="작품 설명"></textarea>
+      </div>
+      <div class="field full">
+        <label>이미지</label>
+        <label class="file-drop" id="file-drop">
+          <input type="file" id="f-image" accept="image/*">
+          <div id="file-drop-text">이미지를 드래그하거나 클릭해서 업로드</div>
+        </label>
+        <img id="image-preview" class="preview" style="display:none;">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn-ghost" id="modal-cancel">취소</button>
+      <button class="btn-primary" id="modal-save">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="minimap-tooltip" id="minimap-tooltip"></div>
+
+<script type="module" src="admin.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Copy this file into ColaServerInfra at:
+#   oci/argocd/whitecube-gallery/application.yaml
+#
+# Then commit & push to ColaServerInfra. ArgoCD will pick it up
+# (assuming an ApplicationSet or app-of-apps already watches that path).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: whitecube-gallery
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/cola314/whitecube-gallery
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

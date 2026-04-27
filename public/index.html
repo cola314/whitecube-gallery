@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>White Cube — 온라인 전시회</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1d1d1f; }
+  canvas { display: block; }
+
+  #splash {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #f5f5f7; color: #1d1d1f; text-align: center; padding: 32px;
+    transition: opacity 600ms ease;
+  }
+  #splash.hidden { opacity: 0; pointer-events: none; }
+  #splash .eyebrow { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: #6e6e73; margin-bottom: 12px; }
+  #splash h1 { font-size: clamp(40px, 7vw, 84px); font-weight: 600; letter-spacing: -0.02em; margin: 0 0 14px; line-height: 1.04; }
+  #splash p { font-size: 17px; max-width: 460px; line-height: 1.5; color: #424245; margin: 0 0 28px; }
+  #splash .controls { display: flex; gap: 18px; font-size: 13px; color: #6e6e73; margin-bottom: 36px; flex-wrap: wrap; justify-content: center; }
+  #splash .controls span { padding: 8px 14px; border: 1px solid #d2d2d7; border-radius: 980px; background: #fff; }
+
+  #splash .gallery-list-label { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #86868b; margin: 0 0 12px; }
+  #splash .gallery-list {
+    display: flex; gap: 12px; max-width: min(820px, 92vw); margin: 0 0 32px;
+    overflow-x: auto; padding: 4px 2px 14px; flex-wrap: wrap; justify-content: center;
+    scrollbar-width: thin;
+  }
+  #splash .gallery-card {
+    flex: 0 0 auto; min-width: 200px; max-width: 280px;
+    padding: 14px 18px; background: #fff; border: 1.5px solid #d2d2d7;
+    border-radius: 14px; cursor: pointer; text-align: left;
+    transition: transform 200ms cubic-bezier(0.42,0,0.58,1), border-color 160ms ease, background 160ms ease, box-shadow 200ms ease;
+    font-family: inherit; color: inherit;
+  }
+  #splash .gallery-card:hover { border-color: #86868b; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+  #splash .gallery-card:active { transform: translateY(0); }
+  #splash .gallery-card.active { border-color: #0071e3; background: #f0f7ff; }
+  #splash .gallery-card.active:hover { border-color: #0071e3; }
+  #splash .gallery-card .gc-name { font-size: 16px; font-weight: 600; color: #1d1d1f; margin-bottom: 4px; line-height: 1.25; letter-spacing: -0.005em; }
+  #splash .gallery-card .gc-meta { font-size: 12px; color: #6e6e73; }
+  #splash .gallery-card.active .gc-meta { color: #0066cc; }
+  #splash .gallery-card .gc-active-mark { display: none; font-size: 10px; color: #0071e3; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 6px; font-weight: 600; }
+  #splash .gallery-card.active .gc-active-mark { display: block; }
+  #splash .actions { display: flex; gap: 12px; align-items: center; }
+  #splash button.primary {
+    background: #1d1d1f; color: #fff; border: none; padding: 14px 32px;
+    border-radius: 980px; font-size: 15px; cursor: pointer;
+    transition: transform 120ms ease, background 200ms ease;
+    font-family: inherit;
+  }
+  #splash button.primary:hover { background: #000; }
+  #splash button.primary:active { transform: scale(0.97); }
+  #splash a.admin {
+    color: #0066cc; font-size: 14px; text-decoration: none; padding: 14px 16px;
+  }
+  #splash a.admin:hover { color: #0077ed; text-decoration: underline; }
+
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; display: none; }
+  #hud.visible { display: block; }
+  .crosshair { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.7); mix-blend-mode: difference; }
+  .hint { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.78); font-size: 12px; letter-spacing: 0.06em; background: rgba(0,0,0,0.4); padding: 8px 16px; border-radius: 980px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .topbar { position: absolute; top: 18px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.86); font-size: 12px; letter-spacing: 0.04em; }
+  .topbar .brand { font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px; mix-blend-mode: difference; color: #fff; }
+  .topbar .counter { background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 980px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); pointer-events: auto; }
+
+  #panel { position: fixed; right: 0; top: 0; bottom: 0; width: min(420px, 92vw); background: #fff; box-shadow: -20px 0 60px rgba(0,0,0,0.18); transform: translateX(100%); transition: transform 360ms cubic-bezier(0.32, 0.08, 0.24, 1); z-index: 20; padding: 64px 36px 36px; overflow-y: auto; }
+  #panel.open { transform: translateX(0); }
+  #panel .close { position: absolute; top: 18px; right: 18px; width: 36px; height: 36px; border-radius: 50%; border: none; background: #f5f5f7; cursor: pointer; font-size: 18px; color: #1d1d1f; display: flex; align-items: center; justify-content: center; transition: background 160ms ease; }
+  #panel .close:hover { background: #e8e8ed; }
+  #panel .eyebrow { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #6e6e73; margin-bottom: 8px; }
+  #panel h2 { font-size: 32px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; margin: 0 0 6px; }
+  #panel .artist { font-size: 15px; color: #424245; margin-bottom: 24px; }
+  #panel .meta { display: flex; gap: 0; flex-direction: column; border-top: 1px solid #d2d2d7; margin-bottom: 24px; }
+  #panel .meta .row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ececef; font-size: 13px; }
+  #panel .meta .row .k { color: #6e6e73; }
+  #panel .meta .row .v { color: #1d1d1f; font-weight: 500; }
+  #panel .desc { font-size: 15px; line-height: 1.65; color: #1d1d1f; }
+  #panel .thumb { width: 100%; aspect-ratio: 4/5; background: #f5f5f7; border-radius: 4px; margin-bottom: 24px; background-size: cover; background-position: center; }
+
+  #joystick { position: fixed; left: 24px; bottom: 24px; width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,0.16); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.22); display: none; touch-action: none; z-index: 15; }
+  #joystick .stick { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.85); pointer-events: none; }
+  #lookpad { position: fixed; right: 0; top: 0; bottom: 0; width: 50%; display: none; touch-action: none; z-index: 14; }
+  body.touch #joystick, body.touch #lookpad { display: block; }
+  body.touch .hint { display: none; }
+
+  #esc-hint { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: #fff; padding: 14px 22px; border-radius: 12px; font-size: 13px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); pointer-events: none; opacity: 0; transition: opacity 280ms ease; z-index: 30; }
+  #esc-hint.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="eyebrow" id="splash-count">— 점의 작품</div>
+  <h1 id="splash-name">White Cube</h1>
+  <p>1인칭 시점으로 천천히 둘러보세요. 마음에 드는 작품 앞에서 멈춰 클릭하면 이야기를 들려드립니다.</p>
+  <div class="gallery-list-label">전시 선택</div>
+  <div class="gallery-list" id="gallery-list"></div>
+  <div class="controls">
+    <span>이동 · W A S D</span>
+    <span>시점 · 마우스</span>
+    <span>인터랙션 · 클릭</span>
+    <span>나가기 · ESC</span>
+  </div>
+  <div class="actions">
+    <button id="enter" class="primary">전시 입장하기</button>
+    <a class="admin" href="admin.html">관리자 →</a>
+  </div>
+</div>
+
+<div id="hud">
+  <div class="topbar">
+    <div class="brand">White Cube · 2026</div>
+    <div class="counter" id="counter">— / 10</div>
+  </div>
+  <div class="crosshair"></div>
+  <div class="hint">작품 앞에서 클릭 → 정보 보기</div>
+</div>
+
+<aside id="panel">
+  <button class="close" id="panel-close" aria-label="닫기">✕</button>
+  <div class="thumb" id="panel-thumb"></div>
+  <div class="eyebrow" id="panel-no">No. 01</div>
+  <h2 id="panel-title">작품명</h2>
+  <div class="artist" id="panel-artist">작가명</div>
+  <div class="meta">
+    <div class="row"><span class="k">Year</span><span class="v" id="panel-year">2025</span></div>
+    <div class="row"><span class="k">Medium</span><span class="v" id="panel-medium">Oil on canvas</span></div>
+    <div class="row"><span class="k">Dimensions</span><span class="v" id="panel-dim">120 × 90 cm</span></div>
+  </div>
+  <p class="desc" id="panel-desc"></p>
+</aside>
+
+<div id="joystick"><div class="stick" id="stick"></div></div>
+<div id="lookpad"></div>
+
+<div id="esc-hint">ESC를 눌러 마우스를 풀어주세요</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module" src="gallery.js"></script>
+
+</body>
+</html>
